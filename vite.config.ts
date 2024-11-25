@@ -14,6 +14,7 @@ export default defineConfig({
     },
   },
   build: {
+    target: 'esnext', // Bu satırı ekleyin
     rollupOptions: {
       input: {
         main: './index.html',
