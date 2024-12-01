@@ -8,7 +8,15 @@ interface PixelCodeGeneratorProps {
 export const PixelCodeGenerator: React.FC<PixelCodeGeneratorProps> = ({ userId }) => {
   const [copied, setCopied] = useState(false);
   
-  const pixelCode = `<script src="/tracker.js" data-user-id="${userId}" async></script>`;
+  const pixelCode = `
+<script>
+  var script = document.createElement('script');
+  script.src = "/tracker.js";
+  script.async = true;
+  script.setAttribute('data-user-id', '${userId}');
+  document.head.appendChild(script);
+</script>
+`;
 
   const copyToClipboard = async () => {
     try {

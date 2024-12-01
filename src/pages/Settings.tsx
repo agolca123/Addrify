@@ -69,7 +69,13 @@ export const Settings: React.FC = () => {
   const copyPixelCode = async () => {
     if (!user?.id) return;
 
-    const pixelCode = `<script src="${window.location.origin}/tracker.js" data-user-id="${user.id}" async></script>`;
+    const pixelCode = `<script>
+    var script = document.createElement('script');
+    script.src = "${window.location.origin}/tracker.js";
+    script.async = true;
+    script.setAttribute('data-user-id', '${user.id}');
+    document.head.appendChild(script);
+  </script>`;
 
     try {
       await navigator.clipboard.writeText(pixelCode);
@@ -262,7 +268,7 @@ export const Settings: React.FC = () => {
         </div>
         <div className="bg-gray-50 p-4 rounded-md">
           <pre className="text-sm overflow-x-auto whitespace-pre-wrap">
-            {`<script src="${window.location.origin}/tracker.js" data-user-id="${user?.id}" async></script>`}
+          {`<script> var script = document.createElement('script'); script.src = "${window.location.origin}/tracker.js"; script.async = true; script.setAttribute('data-user-id', '${user?.id}'); document.head.appendChild(script); </script> `}
           </pre>
         </div>
         <div className="mt-4 text-sm text-gray-600">
