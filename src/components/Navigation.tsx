@@ -88,7 +88,7 @@ export const Navigation: React.FC = () => {
             <div className="flex-shrink-0 flex items-center">
               <Link to={isAdmin ? '/admin' : '/client'} className="flex items-center space-x-2">
               <img 
-                src="/src/assets/addrify-logo-v2.png" 
+                src="/assets/addrify-logo-v2.png" 
                 alt="Addrify Logo" 
                 className="h-12"
               />

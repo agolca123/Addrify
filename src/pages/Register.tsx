@@ -71,7 +71,7 @@ export const Register: React.FC = () => {
         <div>
           <div className="flex justify-center">
           <img 
-                src="/src/assets/addrify-icon.png" 
+                src="/assets/addrify-icon.png" 
                 alt="Addrify Logo" 
                 className="h-12 w-12"
               />
