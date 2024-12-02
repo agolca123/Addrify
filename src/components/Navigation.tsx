@@ -87,10 +87,12 @@ export const Navigation: React.FC = () => {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link to={isAdmin ? '/admin' : '/client'} className="flex items-center space-x-2">
-                <MapPin className="h-8 w-8 text-indigo-600" />
-                <span className="font-bold text-xl text-gray-900">
-                  Addrify
-                </span>
+              <img 
+                src="/src/assets/addrify-logo-v2.png" 
+                alt="Addrify Logo" 
+                className="h-12"
+              />
+                
               </Link>
             </div>
 
@@ -101,7 +103,7 @@ export const Navigation: React.FC = () => {
                   to={link.to}
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                     isActive(link.to)
-                      ? 'border-indigo-500 text-gray-900'
+                      ? 'border-green-600 text-gray-900'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
@@ -116,7 +118,7 @@ export const Navigation: React.FC = () => {
             {!isAdmin && (
               <Link
                 to="/subscription"
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-700 hover:bg-green-600"
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Subscription
@@ -172,7 +174,7 @@ export const Navigation: React.FC = () => {
                 to={link.to}
                 className={`flex items-center px-3 py-2 text-base font-medium ${
                   isActive(link.to)
-                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                    ? 'bg-indigo-50 border-green-600 text-indigo-700'
                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}

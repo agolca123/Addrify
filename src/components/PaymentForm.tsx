@@ -77,7 +77,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({ plan, onPaymentComplet
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full bg-green-700 text-white py-2 px-4 rounded-md hover:bg-green-600 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <CreditCard className="w-5 h-5" />
           {loading ? 'Processing...' : 'Proceed to Payment'}

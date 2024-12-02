@@ -14,32 +14,32 @@ import {
 export const LandingPage: React.FC = () => {
   const features = [
     {
-      icon: <MapPin className="h-6 w-6 text-indigo-600" />,
+      icon: <MapPin className="h-6 w-6 text-green-700" />,
       title: 'Real-time Location Tracking',
       description: 'Track locations in real-time with precise accuracy and detailed information.'
     },
     {
-      icon: <Shield className="h-6 w-6 text-indigo-600" />,
+      icon: <Shield className="h-6 w-6 text-green-700" />,
       title: 'Secure & Private',
       description: 'Enterprise-grade security with end-to-end encryption for all your data.'
     },
     {
-      icon: <Globe className="h-6 w-6 text-indigo-600" />,
+      icon: <Globe className="h-6 w-6 text-green-700" />,
       title: 'Global Coverage',
       description: 'Track locations anywhere in the world with our comprehensive global coverage.'
     },
     {
-      icon: <Users className="h-6 w-6 text-indigo-600" />,
+      icon: <Users className="h-6 w-6 text-green-700" />,
       title: 'Team Management',
       description: 'Manage multiple users and control access levels with ease.'
     },
     {
-      icon: <BarChart className="h-6 w-6 text-indigo-600" />,
+      icon: <BarChart className="h-6 w-6 text-green-700" />,
       title: 'Advanced Analytics',
       description: 'Get detailed insights and analytics about your tracking data.'
     },
     {
-      icon: <Clock className="h-6 w-6 text-indigo-600" />,
+      icon: <Clock className="h-6 w-6 text-green-700" />,
       title: '24/7 Support',
       description: 'Round-the-clock support to help you with any questions or issues.'
     }
@@ -48,7 +48,7 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="bg-white">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-indigo-600 to-indigo-800">
+      <div className="relative bg-gradient-to-r from-green-700 to-indigo-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
@@ -66,7 +66,7 @@ export const LandingPage: React.FC = () => {
               </Link>
               <Link
                 to="/login"
-                className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-500 hover:bg-indigo-600 md:py-4 md:text-lg md:px-10"
+                className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-700 hover:bg-green-600 md:py-4 md:text-lg md:px-10"
               >
                 Sign In
               </Link>

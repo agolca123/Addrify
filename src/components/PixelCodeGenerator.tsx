@@ -36,8 +36,8 @@ export const PixelCodeGenerator: React.FC<PixelCodeGeneratorProps> = ({ userId }
           onClick={copyToClipboard}
           className={`px-4 py-2 rounded flex items-center gap-2 transition-colors ${
             copied
-              ? 'bg-green-600 hover:bg-green-700'
-              : 'bg-indigo-600 hover:bg-indigo-700'
+              ? 'bg-green-700 hover:bg-green-600'
+              : 'bg-green-700 hover:bg-green-600'
           } text-white`}
         >
           {copied ? (

@@ -2,67 +2,54 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../config/supabase';
-import { Copy, Check, Bell, Lock, Mail, Shield } from 'lucide-react';
+import { Mail, Shield, Copy, Check } from 'lucide-react';
+import { PasswordChange } from '../components/settings/PasswordChange';
+import { TwoFactorAuth } from '../components/settings/TwoFactorAuth';
+import { NotificationSettings } from '../components/settings/NotificationSettings';
 
 export const Settings: React.FC = () => {
   const { user } = useAuthStore();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
   const [notifications, setNotifications] = useState({
     email: true,
     browser: false,
     updates: true,
     security: true,
   });
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setEmail(user.email);
-      setTwoFactorEnabled(user.twoFactorEnabled || false);
-      if (user.notificationPreferences) {
-        setNotifications(user.notificationPreferences);
-      }
+    if (user?.notificationPreferences) {
+      setNotifications(user.notificationPreferences);
     }
   }, [user]);
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage('');
+  const handleSuccess = (msg: string) => {
+    setMessage(msg);
     setError('');
+    setTimeout(() => setMessage(''), 3000);
+  };
 
+  const handleError = (err: string) => {
+    setError(err);
+    setMessage('');
+  };
+
+  const handleNotificationChange = async (newSettings: any) => {
     try {
-      if (password && !currentPassword) {
-        throw new Error('Current password is required to set a new password');
-      }
-
-      if (password) {
-        const { error: passwordError } = await supabase.auth.updateUser({
-          password: password,
-        });
-
-        if (passwordError) throw passwordError;
-      }
-
       const { error: updateError } = await supabase
         .from('users')
         .update({
-          two_factor_enabled: twoFactorEnabled,
-          notification_preferences: notifications,
+          notification_preferences: newSettings,
         })
         .eq('id', user?.id);
 
       if (updateError) throw updateError;
-
-      setPassword('');
-      setCurrentPassword('');
-      setMessage('Profile updated successfully');
+      setNotifications(newSettings);
+      handleSuccess('Notification preferences updated');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      handleError(err instanceof Error ? err.message : 'Failed to update notification preferences');
     }
   };
 
@@ -86,6 +73,10 @@ export const Settings: React.FC = () => {
     }
   };
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Profile Settings */}
@@ -95,145 +86,67 @@ export const Settings: React.FC = () => {
         className="bg-white p-6 rounded-lg shadow-md"
       >
         <div className="flex items-center gap-2 mb-6">
-          <Shield className="h-5 w-5 text-indigo-600" />
+          <Shield className="h-5 w-5 text-green-700" />
           <h2 className="text-xl font-bold">Profile Settings</h2>
         </div>
 
-        <form onSubmit={handleUpdateProfile} className="space-y-6">
-          {message && (
-            <div className="bg-green-50 border border-green-400 text-green-700 px-4 py-3 rounded">
-              {message}
-            </div>
-          )}
+        {message && (
+          <div className="mb-4 bg-green-50 border border-green-400 text-green-700 px-4 py-3 rounded">
+            {message}
+          </div>
+        )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
 
+        <div className="space-y-6">
+          {/* Email Display */}
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
             <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
                 <Mail className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="email"
-                id="email"
-                value={email}
+                value={user.email}
                 disabled
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
               />
             </div>
           </div>
 
-          <div>
-            <label
-              htmlFor="current-password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Current Password
-            </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="password"
-                id="current-password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter current password to change"
-              />
-            </div>
+          {/* Password Change */}
+          <div className="pt-4 border-t">
+            <h3 className="text-lg font-medium mb-4">Change Password</h3>
+            <PasswordChange
+              onSuccess={() => handleSuccess('Password updated successfully')}
+              onError={handleError}
+            />
           </div>
 
-          <div>
-            <label
-              htmlFor="new-password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              New Password
-            </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="password"
-                id="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Leave blank to keep current password"
-              />
-            </div>
+          {/* Two-Factor Authentication */}
+          <div className="pt-4 border-t">
+            <h3 className="text-lg font-medium mb-4">Two-Factor Authentication</h3>
+            <TwoFactorAuth
+              enabled={user.twoFactorEnabled}
+              onSuccess={() => handleSuccess('2FA settings updated successfully')}
+              onError={handleError}
+            />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="two-factor"
-                type="checkbox"
-                checked={twoFactorEnabled}
-                onChange={(e) => setTwoFactorEnabled(e.target.checked)}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="two-factor"
-                className="ml-2 block text-sm text-gray-900"
-              >
-                Enable Two-Factor Authentication
-              </label>
-            </div>
+          {/* Notification Settings */}
+          <div className="pt-4 border-t">
+            <h3 className="text-lg font-medium mb-4">Notifications</h3>
+            <NotificationSettings
+              settings={notifications}
+              onChange={handleNotificationChange}
+            />
           </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
-              Notification Preferences
-            </h3>
-            <div className="space-y-2">
-              {Object.entries(notifications).map(([key, value]) => (
-                <div key={key} className="flex items-center">
-                  <input
-                    id={`notification-${key}`}
-                    type="checkbox"
-                    checked={value}
-                    onChange={(e) =>
-                      setNotifications({
-                        ...notifications,
-                        [key]: e.target.checked,
-                      })
-                    }
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor={`notification-${key}`}
-                    className="ml-2 block text-sm text-gray-900 capitalize"
-                  >
-                    {key} Notifications
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Update Profile
-            </button>
-          </div>
-        </form>
+        </div>
       </motion.div>
 
       {/* Tracking Pixel */}
@@ -249,8 +162,8 @@ export const Settings: React.FC = () => {
             onClick={copyPixelCode}
             className={`px-4 py-2 rounded flex items-center gap-2 transition-colors ${
               copied
-                ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-indigo-600 hover:bg-indigo-700'
+                ? 'bg-green-700 hover:bg-green-600'
+                : 'bg-green-700 hover:bg-green-600'
             } text-white`}
           >
             {copied ? (
@@ -310,7 +223,7 @@ export const Settings: React.FC = () => {
             {user?.subscriptionStatus === 'free' && (
               <button
                 onClick={() => (window.location.href = '/subscription')}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                className="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-600"
               >
                 Upgrade Plan
               </button>

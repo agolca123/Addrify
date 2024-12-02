@@ -71,7 +71,7 @@ export const AdminLog: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
       </div>
     );
   }
@@ -83,7 +83,7 @@ export const AdminLog: React.FC = () => {
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
         <button
           onClick={handleCreateUser}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600"
         >
           <UserPlus className="w-4 h-4" />
           Add New User
@@ -94,7 +94,7 @@ export const AdminLog: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-center gap-4">
-            <UsersIcon className="w-8 h-8 text-indigo-600" />
+            <UsersIcon className="w-8 h-8 text-green-700" />
             <div>
               <p className="text-sm text-gray-600">Total Users</p>
               <p className="text-2xl font-bold">{users.length}</p>
@@ -173,7 +173,7 @@ export const AdminLog: React.FC = () => {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleEditUser(user.id)}
-                        className="text-indigo-600 hover:text-indigo-900"
+                        className="text-green-700 hover:text-indigo-900"
                       >
                         <Edit className="w-4 h-4" />
                       </button>

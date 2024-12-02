@@ -100,12 +100,12 @@ export const Users: React.FC = () => {
             value={newUserEmail}
             onChange={(e) => setNewUserEmail(e.target.value)}
             placeholder="Enter email address"
-            className="flex-1 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-600"
             required
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            className="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-600"
           >
             Add User
           </button>

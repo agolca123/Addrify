@@ -20,11 +20,11 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
         <div
           key={plan.id}
           className={`relative bg-white rounded-lg shadow-md overflow-hidden ${
-            plan.isPopular ? 'ring-2 ring-indigo-600' : ''
+            plan.isPopular ? 'ring-2 ring-green-700' : ''
           }`}
         >
           {plan.isPopular && (
-            <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 py-1 text-sm">
+            <div className="absolute top-0 right-0 bg-green-700 text-white px-3 py-1 text-sm">
               Popular
             </div>
           )}
@@ -47,7 +47,7 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
               className={`mt-8 w-full px-4 py-2 rounded-md ${
                 currentPlan === plan.id
                   ? 'bg-gray-100 text-gray-800 cursor-default'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  : 'bg-green-700 text-white hover:bg-green-600'
               }`}
               disabled={currentPlan === plan.id}
             >
