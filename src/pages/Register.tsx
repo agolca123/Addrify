@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../config/supabase';
-import { MapPin } from 'lucide-react';
+import { SuccessNotification } from '../components/notifications/SuccessNotification';
 
 export const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,23 +26,31 @@ export const Register: React.FC = () => {
       if (authError) throw authError;
       if (!authData.user) throw new Error('No user data returned');
 
-      // 2. Create user record in public.users table
+      // 2. Create user record in public.users table with role 'user'
       const { error: userError } = await supabase
         .from('users')
         .insert([
           {
             id: authData.user.id,
             email: email,
-            role: 'admin',
+            role: 'user',
             pixel_code: crypto.randomUUID()
           }
         ]);
 
       if (userError) throw userError;
 
-      // Success - redirect to login
-      alert('Registration successful! Please login.');
-      navigate('/login');
+      // Show success notification
+      setShowSuccess(true);
+      
+      // Reset form
+      setEmail('');
+      setPassword('');
+
+      // Redirect after delay
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
     } catch (err) {
       console.error('Registration error:', err);
       setError(err instanceof Error ? err.message : 'Registration failed');
@@ -52,10 +61,20 @@ export const Register: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <SuccessNotification
+        show={showSuccess}
+        message="Registration successful! Redirecting to login..."
+        onClose={() => setShowSuccess(false)}
+      />
+
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <MapPin className="h-12 w-12 text-indigo-600" />
+          <img 
+                src="/assets/addrify-icon.png" 
+                alt="Addrify Logo" 
+                className="h-12 w-12"
+              />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create your account
@@ -78,7 +97,7 @@ export const Register: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-green-600 focus:border-green-600 focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -94,7 +113,7 @@ export const Register: React.FC = () => {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-green-600 focus:border-green-600 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -106,11 +125,19 @@ export const Register: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-700 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500 disabled:opacity-50"
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>
           </div>
+
+          <p className="mt-2 text-center text-sm text-gray-600">
+          Already have an account?{' '}
+            <Link to="/login" className="font-medium text-green-700 hover:text-green-600">
+            Sign in
+            </Link>
+          </p>
+
         </form>
       </div>
     </div>

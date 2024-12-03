@@ -83,12 +83,12 @@ export const ClientDashboard: React.FC = () => {
               <p className="text-sm text-gray-600">Total Locations</p>
               <p className="text-2xl font-bold">{locations.length}</p>
             </div>
-            <MapPin className="h-8 w-8 text-indigo-600" />
+            <MapPin className="h-8 w-8 text-green-700" />
           </div>
           <div className="mt-4">
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-indigo-600 h-2 rounded-full"
+                className="bg-green-700 h-2 rounded-full"
                 style={{
                   width: `${(locations.length / addressLimit) * 100}%`
                 }}
@@ -151,11 +151,11 @@ export const ClientDashboard: React.FC = () => {
                 <div
                   key={plan.id}
                   className={`border rounded-lg p-6 ${
-                    plan.isPopular ? 'border-indigo-500 ring-2 ring-indigo-500' : ''
+                    plan.isPopular ? 'border-green-600 ring-2 ring-green-600' : ''
                   }`}
                 >
                   {plan.isPopular && (
-                    <span className="bg-indigo-500 text-white px-3 py-1 rounded-full text-sm">
+                    <span className="bg-green-700 text-white px-3 py-1 rounded-full text-sm">
                       Popular
                     </span>
                   )}
@@ -186,7 +186,7 @@ export const ClientDashboard: React.FC = () => {
                     onClick={handleUpgradeClick}
                     className={`mt-8 w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                       plan.isPopular
-                        ? 'bg-indigo-600 hover:bg-indigo-700'
+                        ? 'bg-green-700 hover:bg-green-600'
                         : 'bg-gray-600 hover:bg-gray-700'
                     }`}
                   >

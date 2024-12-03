@@ -52,7 +52,7 @@ export const AdminUsers: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
       </div>
     );
   }
@@ -65,7 +65,7 @@ export const AdminUsers: React.FC = () => {
         className="flex justify-between items-center"
       >
         <h1 className="text-2xl font-bold">User Management</h1>
-        <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+        <button className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600">
           <UserPlus className="h-5 w-5" />
           Add New User
         </button>
@@ -105,7 +105,7 @@ export const AdminUsers: React.FC = () => {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <Mail className="h-5 w-5 text-indigo-600" />
+                          <Mail className="h-5 w-5 text-green-700" />
                         </div>
                       </div>
                       <div className="ml-4">
@@ -143,7 +143,7 @@ export const AdminUsers: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-indigo-600 hover:text-indigo-900">
+                      <button className="text-green-700 hover:text-indigo-900">
                         <Edit className="h-5 w-5" />
                       </button>
                       <button 

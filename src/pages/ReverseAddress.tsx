@@ -84,7 +84,7 @@ export const ReverseAddress: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
       </div>
     );
   }
@@ -273,7 +273,7 @@ export const ReverseAddress: React.FC = () => {
                   </div>
                   <MapPin className={`h-5 w-5 ${
                     selectedLocation?.id === location.id
-                      ? 'text-indigo-600'
+                      ? 'text-green-700'
                       : 'text-gray-400'
                   }`} />
                 </div>

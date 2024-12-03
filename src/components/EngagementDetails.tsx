@@ -29,14 +29,14 @@ export const EngagementDetails: React.FC<EngagementDetailsProps> = ({ details })
         className="bg-white p-4 rounded-lg shadow-md"
       >
         <div className="flex items-center gap-2 mb-2">
-          <Clock className="h-5 w-5 text-indigo-600" />
+          <Clock className="h-5 w-5 text-green-700" />
           <h3 className="font-medium">Time Spent</h3>
         </div>
         <p className="text-2xl font-bold">{formatTime(details.timeSpent)}</p>
         <div className="mt-2 flex items-center">
           <div className="flex-1 bg-gray-200 rounded-full h-2">
             <div
-              className="bg-indigo-600 h-2 rounded-full"
+              className="bg-green-700 h-2 rounded-full"
               style={{ width: `${(details.timeScore / 10) * 100}%` }}
             />
           </div>
@@ -58,7 +58,7 @@ export const EngagementDetails: React.FC<EngagementDetailsProps> = ({ details })
         <div className="mt-2 flex items-center">
           <div className="flex-1 bg-gray-200 rounded-full h-2">
             <div
-              className="bg-green-600 h-2 rounded-full"
+              className="bg-green-700 h-2 rounded-full"
               style={{ width: `${(details.pageViewScore / 10) * 100}%` }}
             />
           </div>

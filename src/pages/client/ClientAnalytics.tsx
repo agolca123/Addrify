@@ -58,7 +58,7 @@ export const ClientAnalytics: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
       </div>
     );
   }
@@ -79,7 +79,7 @@ export const ClientAnalytics: React.FC = () => {
               <p className="text-sm text-gray-600">Total Pages Tracked</p>
               <p className="text-2xl font-bold">{engagementData.length}</p>
             </div>
-            <Activity className="h-8 w-8 text-indigo-600" />
+            <Activity className="h-8 w-8 text-green-700" />
           </div>
         </motion.div>
 

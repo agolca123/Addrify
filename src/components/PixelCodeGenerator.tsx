@@ -8,7 +8,15 @@ interface PixelCodeGeneratorProps {
 export const PixelCodeGenerator: React.FC<PixelCodeGeneratorProps> = ({ userId }) => {
   const [copied, setCopied] = useState(false);
   
-  const pixelCode = `<script src="/tracker.js" data-user-id="${userId}" async></script>`;
+  const pixelCode = `
+<script>
+  var script = document.createElement('script');
+  script.src = "/tracker.js";
+  script.async = true;
+  script.setAttribute('data-user-id', '${userId}');
+  document.head.appendChild(script);
+</script>
+`;
 
   const copyToClipboard = async () => {
     try {
@@ -28,8 +36,8 @@ export const PixelCodeGenerator: React.FC<PixelCodeGeneratorProps> = ({ userId }
           onClick={copyToClipboard}
           className={`px-4 py-2 rounded flex items-center gap-2 transition-colors ${
             copied
-              ? 'bg-green-600 hover:bg-green-700'
-              : 'bg-indigo-600 hover:bg-indigo-700'
+              ? 'bg-green-700 hover:bg-green-600'
+              : 'bg-green-700 hover:bg-green-600'
           } text-white`}
         >
           {copied ? (
