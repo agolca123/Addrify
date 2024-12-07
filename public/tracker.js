@@ -11,16 +11,18 @@
     userId: null,
     isTracking: false,
     locationSent: false,
-    engagementSent: false,
+    engagementData: {},
     locationData: null,
+    permissionGranted: false,
+    engagement_id: null
   };
 
   const logError = (context, error) => {
-    console.error(`[Hata - ${context}]`, error);
+    console.error(`[Error - ${context}]`, error);
     if (error instanceof Error) {
-      console.error(`[Detay - ${context}]`, error.message, error.stack);
+      console.error(`[Detail - ${context}]`, error.message, error.stack);
     } else {
-      console.error(`[Detay - ${context}]`, error);
+      console.error(`[Detail - ${context}]`, error);
     }
   };
 
@@ -38,6 +40,37 @@
     return null;
   };
 
+  const saveStateToLocalStorage = () => {
+    try {
+      const dataToSave = {
+        pageViews: Array.from(state.pageViews),
+        engagementData: state.engagementData,
+        locationData: state.locationData,
+        userId: state.userId,
+        engagement_id: state.engagement_id,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem(`tracking_data_${state.userId}`, JSON.stringify(dataToSave));
+    } catch (error) {
+      logError('saveStateToLocalStorage', error);
+    }
+  };
+
+  const loadStateFromLocalStorage = () => {
+    try {
+      const savedData = localStorage.getItem(`tracking_data_${state.userId}`);
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        state.pageViews = new Set(parsedData.pageViews);
+        state.engagementData = parsedData.engagementData;
+        state.locationData = parsedData.locationData;
+        state.engagement_id = parsedData.engagement_id;
+      }
+    } catch (error) {
+      logError('loadStateFromLocalStorage', error);
+    }
+  };
+
   const initialize = () => {
     try {
       const script = getCurrentScript();
@@ -51,6 +84,15 @@
         console.error('[initialize] Invalid user ID.');
         return false;
       }
+
+      // Kayıtlı verileri yükle
+      loadStateFromLocalStorage();
+
+      const permissionStatus = localStorage.getItem('locationPermissionGranted');
+      if (permissionStatus === 'true') {
+        state.permissionGranted = true;
+      }
+
       return true;
     } catch (error) {
       logError('initialize', error);
@@ -60,32 +102,54 @@
 
   const calculateEngagementScore = () => {
     try {
-      const timeSpentSeconds = Math.floor((Date.now() - state.startTime) / 1000);
+      // Local storage'dan verileri al
+      const savedData = localStorage.getItem(`tracking_data_${state.userId}`);
+      if (!savedData) {
+        return { total: 0, details: {} };
+      }
 
-      let timeScore = timeSpentSeconds <= 30 ? 1
-        : timeSpentSeconds <= 60 ? 3
-        : timeSpentSeconds <= 90 ? 6
-        : timeSpentSeconds <= 120 ? 7
-        : timeSpentSeconds <= 180 ? 9 : 10;
+      const data = JSON.parse(savedData);
+      
+      // Tüm sayfaların toplam değerlerini hesapla
+      let totalClicks = 0;
+      let totalTimeSpent = 0;
+      
+      // Her sayfanın verilerini topla
+      Object.values(data.engagementData || {}).forEach(pageData => {
+        totalClicks += pageData.clicks || 0;
+        totalTimeSpent += pageData.timeSpent || 0;
+      });
 
-      let pageViewScore = state.pageViews.size === 1 ? 1
-        : state.pageViews.size <= 3 ? 5
-        : state.pageViews.size <= 5 ? 6
-        : state.pageViews.size <= 7 ? 7 : 10;
+      // Benzersiz sayfa sayısını Object.keys ile al
+      const totalPageViews = Object.keys(data.engagementData || {}).length;
 
-      let clickScore = state.clickCount === 0 ? 1
-        : state.clickCount <= 2 ? 5 : 10;
+      // Skorları hesapla
+      let timeScore = totalTimeSpent <= 30 ? 1
+        : totalTimeSpent <= 60 ? 3
+        : totalTimeSpent <= 90 ? 6
+        : totalTimeSpent <= 120 ? 7
+        : totalTimeSpent <= 180 ? 9 : 10;
+
+      let pageViewScore = totalPageViews === 1 ? 1
+        : totalPageViews <= 3 ? 3
+        : totalPageViews <= 5 ? 6
+        : totalPageViews <= 7 ? 8 : 10;
+
+      let clickScore = totalClicks === 0 ? 1
+        : totalClicks <= 2 ? 3
+        : totalClicks <= 5 ? 6
+        : totalClicks <= 10 ? 8 : 10;
 
       const w1 = 0.3, w2 = 0.4, w3 = 0.3;
 
       return {
         total: Math.round((w1 * timeScore + w2 * pageViewScore + w3 * clickScore) * 10) / 10,
         details: {
-          timeSpent: timeSpentSeconds,
+          timeSpent: totalTimeSpent,
           timeScore,
-          pageViews: state.pageViews.size,
+          pageViews: totalPageViews,
           pageViewScore,
-          clicks: state.clickCount,
+          clicks: totalClicks,
           clickScore
         }
       };
@@ -98,43 +162,40 @@
   async function getAddressFromCoordinates(latitude, longitude) {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}&language=tr`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}&language=tr&result_type=street_address`
       );
-  
+
       if (!response.ok) {
         throw new Error(`Google Maps API responded with status: ${response.status}`);
       }
-  
+
       const data = await response.json();
-  
+
       if (data.status === 'REQUEST_DENIED') {
         throw new Error(data.error_message);
       }
-  
+
       if (!data.results || data.results.length === 0) {
         throw new Error('Address not found');
       }
-  
-      // En iyi eşleşmeyi seç
-      const result = data.results[0]; // İlk sonucu alın (en yüksek eşleşme)
-  
-      let streetAddress = '';
+
+      // Get the most accurate result
+      const result = data.results[0];
+      let streetNumber = '';
+      let route = '';
       let city = '';
       let country = '';
       let postalCode = '';
-  
+
       result.address_components.forEach((component) => {
         if (component.types.includes('street_number')) {
-          streetAddress = component.long_name + ' ' + streetAddress;
+          streetNumber = component.long_name;
         }
         if (component.types.includes('route')) {
-          streetAddress += component.long_name;
-        }
-        if (component.types.includes('locality')) {
-          city = component.long_name;
+          route = component.long_name;
         }
         if (component.types.includes('administrative_area_level_1')) {
-          city = component.long_name; // İlgili alanları doldurun
+          city = component.long_name;
         }
         if (component.types.includes('country')) {
           country = component.long_name;
@@ -143,10 +204,12 @@
           postalCode = component.long_name;
         }
       });
-  
+
+      const streetAddress = `${route} ${streetNumber}`.trim();
+
       return {
         address: result.formatted_address,
-        streetAddress: streetAddress.trim(),
+        streetAddress,
         city,
         country,
         postalCode,
@@ -157,9 +220,24 @@
     }
   }
 
+  const generateEngagementId = () => {
+    return 'eng_' + Math.random().toString(36).substr(2, 9);
+  };
+
   async function sendLocationData(locationData) {
     try {
-      if (state.locationSent) return;
+      // Eğer zaten bir engagement_id varsa, sadece güncelleme yap
+      if (state.engagement_id) {
+        await updateEngagementData();
+        return;
+      }
+
+      // İlk kez gönderiliyorsa yeni engagement_id oluştur
+      state.engagement_id = generateEngagementId();
+      saveStateToLocalStorage();
+
+      // Tüm sayfaların toplam engagement skorunu hesapla
+      const totalEngagement = calculateEngagementScore();
 
       const response = await fetch(`${BACKEND_URL}/rest/v1/locations`, {
         method: 'POST',
@@ -171,13 +249,14 @@
         },
         body: JSON.stringify({
           user_id: state.userId,
+          engagement_id: state.engagement_id,
           latitude: locationData.latitude,
           longitude: locationData.longitude,
           address: locationData.address,
           city: locationData.city,
           country: locationData.country,
           page_url: state.currentPage,
-          engagement_data: locationData.engagementData,
+          engagement_data: totalEngagement,
           device_info: locationData.deviceInfo,
           timestamp: new Date().toISOString()
         })
@@ -194,65 +273,66 @@
     }
   }
 
-  async function sendEngagementData(engagementData) {
+  async function updateEngagementData() {
     try {
-      const response = await fetch(`${BACKEND_URL}/rest/v1/engagements`, {
-        method: 'POST',
+      if (!state.engagement_id) {
+        console.log('Güncelleme yapılmadı: engagement_id yok');
+        return;
+      }
+
+      // Tüm sayfaların toplam engagement skorunu hesapla
+      const totalEngagement = calculateEngagementScore();
+
+      const requestBody = {
+        engagement_data: totalEngagement,
+        page_url: state.currentPage,
+        timestamp: new Date().toISOString()
+      };
+
+      const updateUrl = `${BACKEND_URL}/rest/v1/locations?engagement_id=eq.${encodeURIComponent(state.engagement_id)}`;
+
+      const response = await fetch(updateUrl, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'apikey': ANON_KEY,
           'Authorization': `Bearer ${ANON_KEY}`,
-          'Prefer': 'return=minimal'
+          'Prefer': 'return=representation'
         },
-        body: JSON.stringify({
-          user_id: state.userId,
-          page_url: state.currentPage,
-          engagement_data: engagementData,
-          timestamp: new Date().toISOString()
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
         const errorDetails = await response.json();
         throw new Error(`Supabase API error: ${errorDetails.message}`);
       }
+
     } catch (error) {
-      logError('sendEngagementData', error);
+      logError('updateEngagementData', error);
     }
   }
 
   const handleBeforeUnload = async () => {
     try {
-      if (!state.engagementSent) {
-        const engagementScore = calculateEngagementScore();
-        await sendEngagementData(engagementScore);
-        state.engagementSent = true;
-      }
+      if (!state.locationData || state.locationSent) return;
+
+      // Send location data with final engagement metrics when user leaves
+      await sendLocationData(state.locationData);
     } catch (error) {
       logError('handleBeforeUnload', error);
     }
   };
 
-  async function trackInitialLocation() {
-    if (state.locationSent) return;
-  
+  async function trackLocation() {
     try {
-      // Tarayıcı yerleşik iznini kullan
-      const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-  
-      if (permissionStatus.state === 'denied') {
-        console.warn('Kullanıcı konum iznini reddetti.');
-        return;
-      }
-  
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
+          timeout: 20000,
+          maximumAge: 0
         });
       });
-  
+
       const { latitude, longitude } = position.coords;
       const addressInfo = await getAddressFromCoordinates(latitude, longitude);
       const deviceInfo = {
@@ -262,147 +342,162 @@
         screenResolution: `${window.screen.width}x${window.screen.height}`,
         timestamp: new Date().toISOString(),
       };
-  
-      const engagementScore = calculateEngagementScore();
-  
+
+      // Initialize engagement data for current page
+      if (!state.engagementData[state.currentPage]) {
+        state.engagementData[state.currentPage] = {
+          startTime: Date.now(),
+          clicks: 0
+        };
+      }
+
       state.locationData = {
         latitude,
         longitude,
         ...addressInfo,
-        deviceInfo,
-        engagementData: engagementScore,
+        deviceInfo
       };
-  
+
+      // Konum verilerini kaydet
+      saveStateToLocalStorage();
+      
+      // Konum verilerini gönder veya güncelle
       await sendLocationData(state.locationData);
+      
+      localStorage.setItem('locationPermissionGranted', 'true');
+      state.permissionGranted = true;
     } catch (error) {
-      logError('trackInitialLocation', error);
+      logError('trackLocation', error);
     }
   }
-  
-  // Kullanıcıdan izni yalnızca tarayıcı sormakla ilgilenin.
+
+  // Sayfa süresini güncellemek için fonksiyon
+  const updateTimeSpent = () => {
+    try {
+      const savedData = localStorage.getItem(`tracking_data_${state.userId}`);
+      if (!savedData) return;
+
+      const data = JSON.parse(savedData);
+      const currentPage = state.currentPage;
+
+      if (data.engagementData[currentPage]) {
+        const currentTime = Date.now();
+        const timeSpentSeconds = Math.floor((currentTime - data.engagementData[currentPage].startTime) / 1000);
+        data.engagementData[currentPage].timeSpent = timeSpentSeconds;
+        
+        // Güncellenmiş veriyi local storage'a kaydet
+        localStorage.setItem(`tracking_data_${state.userId}`, JSON.stringify(data));
+        
+        // State'i de güncelle
+        state.engagementData = data.engagementData;
+      }
+    } catch (error) {
+      logError('updateTimeSpent', error);
+    }
+  };
+
+  // Sayfa değişikliği için güncellenmiş fonksiyonlar
+  const handlePageChange = async () => {
+    try {
+      state.pageViews.add(window.location.pathname);
+      state.currentPage = window.location.pathname;
+      
+      if (!state.engagementData[state.currentPage]) {
+        state.engagementData[state.currentPage] = {
+          startTime: Date.now(),
+          clicks: 0,
+          timeSpent: 0
+        };
+      }
+      
+      saveStateToLocalStorage();
+
+      // Sayfa değiştiğinde mevcut engagement_id ile verileri güncelle
+      if (state.locationData && state.engagement_id) {
+        await updateEngagementData();
+      }
+    } catch (error) {
+      logError('handlePageChange', error);
+    }
+  };
+
   if (initialize()) {
     try {
-      document.addEventListener('click', () => state.clickCount++);
-      window.addEventListener('beforeunload', handleBeforeUnload);
-  
-      const originalPushState = history.pushState;
-      history.pushState = function () {
-        originalPushState.apply(this, arguments);
-        state.pageViews.add(window.location.pathname);
-        state.currentPage = window.location.pathname;
-        state.engagementSent = false;
-        const engagementScore = calculateEngagementScore();
-        sendEngagementData(engagementScore);
-      };
-  
-      window.addEventListener('popstate', () => {
-        state.pageViews.add(window.location.pathname);
-        state.currentPage = window.location.pathname;
-        state.engagementSent = false;
-        const engagementScore = calculateEngagementScore();
-        sendEngagementData(engagementScore);
+      // Click event listener
+      document.addEventListener('click', () => {
+        const savedData = localStorage.getItem(`tracking_data_${state.userId}`);
+        if (!savedData) return;
+
+        const data = JSON.parse(savedData);
+        if (data.engagementData[state.currentPage]) {
+          data.engagementData[state.currentPage].clicks++;
+          
+          // Güncellenmiş veriyi local storage'a kaydet
+          localStorage.setItem(`tracking_data_${state.userId}`, JSON.stringify(data));
+          
+          // State'i de güncelle
+          state.engagementData = data.engagementData;
+        }
       });
-  
-      // Popup göstermek yerine doğrudan konum izlemeyi başlat
-      trackInitialLocation();
-    } catch (error) {
-      logError('mainInitialization', error);
-    }
-  }
 
-  /*
-  function showPermissionPrompt() {
-    try {
-      const hasPermissionPrompted = localStorage.getItem('locationPermissionGranted');
-      if (hasPermissionPrompted) return;
-
-      const promptDiv = document.createElement('div');
-      promptDiv.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      `;
-
-      promptDiv.innerHTML = `
-        <div>
-          <p style="margin: 0 0 5px 0; font-weight: 500;">Konum İzni</p>
-          <p style="margin: 0; font-size: 14px; color: #666;">
-            Size daha iyi hizmet verebilmek için konum bilginize ihtiyacımız var.
-          </p>
-        </div>
-        <button id="acceptLocation" style="
-          background: #4F46E5;
-          color: white;
-          border: none;
-          padding: 8px 16px;
-          border-radius: 4px;
-          cursor: pointer;
-          font-weight: 500;
-        ">İzin Ver</button>
-        <button id="denyLocation" style="
-          background: #EEE;
-          color: #333;
-          border: none;
-          padding: 8px 16px;
-          border-radius: 4px;
-          cursor: pointer;
-          font-weight: 500;
-        ">Reddet</button>
-      `;
-
-      document.body.appendChild(promptDiv);
-
-      document.getElementById('acceptLocation').onclick = async () => {
-        localStorage.setItem('locationPermissionGranted', 'true');
-        promptDiv.remove();
-        state.isTracking = true;
-        await trackInitialLocation();
-      };
-
-      document.getElementById('denyLocation').onclick = () => {
-        localStorage.setItem('locationPermissionGranted', 'false');
-        promptDiv.remove();
-        state.isTracking = false;
-      };
-    } catch (error) {
-      logError('showPermissionPrompt', error);
-    }
-  } */
-
-  if (initialize()) {
-    try {
-      document.addEventListener('click', () => state.clickCount++);
-      window.addEventListener('beforeunload', handleBeforeUnload);
-
+      // Sayfa değişikliği takibi
       const originalPushState = history.pushState;
       history.pushState = function() {
         originalPushState.apply(this, arguments);
-        state.pageViews.add(window.location.pathname);
-        state.currentPage = window.location.pathname;
-        state.engagementSent = false;
-        const engagementScore = calculateEngagementScore();
-        sendEngagementData(engagementScore);
+        handlePageChange();
       };
 
-      window.addEventListener('popstate', () => {
-        state.pageViews.add(window.location.pathname);
-        state.currentPage = window.location.pathname;
-        state.engagementSent = false;
-        const engagementScore = calculateEngagementScore();
-        sendEngagementData(engagementScore);
+      window.addEventListener('popstate', handlePageChange);
+
+      // Süre ve engagement güncellemeleri için interval'lar
+      const timeUpdateInterval = setInterval(() => {
+        updateTimeSpent();
+      }, 10000); // Her 10 saniyede bir süreyi güncelle
+
+      // Engagement verilerini düzenli olarak güncelle
+      const engagementUpdateInterval = setInterval(async () => {
+        if (state.engagement_id) {
+          updateTimeSpent(); // Önce süreyi güncelle
+          await updateEngagementData(); // Sonra Supabase'i güncelle
+        }
+      }, 10000); // Her 10 saniyede bir güncelle
+
+      // Sayfa kapatıldığında interval'ları temizle ve son güncellemeyi yap
+      window.addEventListener('beforeunload', async () => {
+        clearInterval(timeUpdateInterval);
+        clearInterval(engagementUpdateInterval);
+        updateTimeSpent(); // Son süre güncellemesi
+        if (state.engagement_id) {
+          await updateEngagementData(); // Son engagement güncellemesi
+        }
       });
 
-      showPermissionPrompt();
+      // Konum izni kontrolü
+      if (state.permissionGranted) {
+        trackLocation();
+      } else {
+        navigator.permissions.query({ name: 'geolocation' })
+          .then(async permissionStatus => {
+            if (permissionStatus.state === 'granted') {
+              state.permissionGranted = true;
+              localStorage.setItem('locationPermissionGranted', 'true');
+              await trackLocation();
+            } else if (permissionStatus.state === 'prompt') {
+              await trackLocation();
+            }
+
+            permissionStatus.addEventListener('change', async () => {
+              if (permissionStatus.state === 'granted') {
+                state.permissionGranted = true;
+                localStorage.setItem('locationPermissionGranted', 'true');
+                await trackLocation();
+              }
+            });
+          })
+          .catch(error => {
+            logError('permissionQuery', error);
+          });
+      }
     } catch (error) {
       logError('mainInitialization', error);
     }
