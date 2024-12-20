@@ -102,6 +102,13 @@ export const LocationMap: React.FC<LocationMapProps> = ({
                 }
               );
 
+              // Street View'a pin marker ekleme
+              const streetViewMarker = new google.maps.Marker({
+                position: { lat: latitude, lng: longitude },
+                map: panorama,
+                title: 'Hedef Konum'
+              });
+
               panoramaRef.current = panorama;
               map.setStreetView(panorama);
               setStreetViewAvailable(true);
@@ -137,15 +144,17 @@ export const LocationMap: React.FC<LocationMapProps> = ({
         className={mapContainerClassName}
       />
       {showStreetView && (
-        <div className="w-full space-y-2">
+        <div className="w-full">
           <div
             ref={streetViewRef}
-            className={mapContainerClassName}
+            className={`${mapContainerClassName} ${!streetViewAvailable ? 'hidden' : ''}`}
           />
           {!streetViewAvailable && (
-            <p className="text-red-500 text-sm">
-              Bu konum için Street View kullanılamıyor.
-            </p>
+            <div className={`flex items-center justify-center bg-gray-50 rounded-lg ${mapContainerClassName}`}>
+              <p className="text-red-500 text-sm">
+                Bu konum için Street View kullanılamıyor.
+              </p>
+            </div>
           )}
         </div>
       )}

@@ -37,7 +37,10 @@ export const ClientAnalytics: React.FC = () => {
     const fetchEngagementData = async () => {
       try {
         const { data, error } = await supabase
-          .rpc('get_engagement_summary', { p_user_id: user.id });
+          .rpc('get_engagement_summary', { 
+            p_user_id: user.id,
+            p_days: 30 // Son 30 günlük veriyi getir
+          });
 
         if (error) throw error;
 
@@ -58,7 +61,7 @@ export const ClientAnalytics: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
@@ -79,7 +82,7 @@ export const ClientAnalytics: React.FC = () => {
               <p className="text-sm text-gray-600">Total Pages Tracked</p>
               <p className="text-2xl font-bold">{engagementData.length}</p>
             </div>
-            <Activity className="h-8 w-8 text-green-700" />
+            <Activity className="h-8 w-8 text-indigo-600" />
           </div>
         </motion.div>
 

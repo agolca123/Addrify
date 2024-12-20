@@ -14,7 +14,12 @@
     engagementData: {},
     locationData: null,
     permissionGranted: false,
-    engagement_id: null
+    engagement_id: null,
+    lastInteractionTime: Date.now(),
+    lastClickCount: 0,
+    lastPageViewCount: 0,
+    trackingStartTime: Date.now(),
+    currentInterval: null
   };
 
   const logError = (context, error) => {
@@ -162,7 +167,7 @@
   async function getAddressFromCoordinates(latitude, longitude) {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}&language=tr&result_type=street_address`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}&language=en&region=US&result_type=street_address`
       );
 
       if (!response.ok) {
@@ -412,12 +417,72 @@
       
       saveStateToLocalStorage();
 
-      // Sayfa değiştiğinde mevcut engagement_id ile verileri güncelle
-      if (state.locationData && state.engagement_id) {
+      // Sadece engagement verilerini güncelle
+      if (state.engagement_id) {
         await updateEngagementData();
       }
     } catch (error) {
       logError('handlePageChange', error);
+    }
+  };
+
+  const hasRecentInteraction = () => {
+    try {
+      const currentClickCount = Object.values(state.engagementData).reduce((sum, page) => sum + (page.clicks || 0), 0);
+      const currentPageViewCount = state.pageViews.size;
+      
+      const hasNewInteractions = currentClickCount > state.lastClickCount || 
+                               currentPageViewCount > state.lastPageViewCount;
+
+      if (hasNewInteractions) {
+        state.lastInteractionTime = Date.now();
+        state.lastClickCount = currentClickCount;
+        state.lastPageViewCount = currentPageViewCount;
+        return true;
+      }
+
+      return (Date.now() - state.lastInteractionTime) < 180000; // Son 3 dakika içinde
+    } catch (error) {
+      logError('hasRecentInteraction', error);
+      return false;
+    }
+  };
+
+  const updateTrackingInterval = () => {
+    try {
+      const elapsedMinutes = (Date.now() - state.trackingStartTime) / 60000;
+      
+      // Mevcut interval'ı temizle
+      if (state.currentInterval) {
+        clearInterval(state.currentInterval);
+      }
+
+      // Eğer son 3 dakikada etkileşim yoksa izlemeyi durdur
+      if (elapsedMinutes >= 6 && !hasRecentInteraction()) {
+        console.log('Tracking stopped due to inactivity');
+        return;
+      }
+
+      // Zaman aralığına göre yeni interval ayarla
+      let intervalTime;
+      if (elapsedMinutes <= 1) {
+        intervalTime = 10000; // İlk 1 dakika: 10 saniye
+      } else if (elapsedMinutes <= 2) {
+        intervalTime = 30000; // 2. dakika: 30 saniye
+      } else {
+        intervalTime = 60000; // 4. dakika ve sonrası: 1 dakika
+      }
+
+      state.currentInterval = setInterval(async () => {
+        updateTimeSpent();
+        if (state.engagement_id) {
+          await updateEngagementData();
+        }
+        updateTrackingInterval(); // Her interval sonunda yeniden değerlendir
+      }, intervalTime);
+
+    } catch (error) {
+      logError('updateTrackingInterval', error);
     }
   };
 
@@ -431,12 +496,9 @@
         const data = JSON.parse(savedData);
         if (data.engagementData[state.currentPage]) {
           data.engagementData[state.currentPage].clicks++;
-          
-          // Güncellenmiş veriyi local storage'a kaydet
           localStorage.setItem(`tracking_data_${state.userId}`, JSON.stringify(data));
-          
-          // State'i de güncelle
           state.engagementData = data.engagementData;
+          state.lastInteractionTime = Date.now(); // Etkileşim zamanını güncelle
         }
       });
 
@@ -449,54 +511,34 @@
 
       window.addEventListener('popstate', handlePageChange);
 
-      // Süre ve engagement güncellemeleri için interval'lar
-      const timeUpdateInterval = setInterval(() => {
-        updateTimeSpent();
-      }, 10000); // Her 10 saniyede bir süreyi güncelle
+      // Yeni tracking sistemini başlat
+      updateTrackingInterval();
 
-      // Engagement verilerini düzenli olarak güncelle
-      const engagementUpdateInterval = setInterval(async () => {
-        if (state.engagement_id) {
-          updateTimeSpent(); // Önce süreyi güncelle
-          await updateEngagementData(); // Sonra Supabase'i güncelle
-        }
-      }, 10000); // Her 10 saniyede bir güncelle
-
-      // Sayfa kapatıldığında interval'ları temizle ve son güncellemeyi yap
-      window.addEventListener('beforeunload', async () => {
-        clearInterval(timeUpdateInterval);
-        clearInterval(engagementUpdateInterval);
-        updateTimeSpent(); // Son süre güncellemesi
-        if (state.engagement_id) {
-          await updateEngagementData(); // Son engagement güncellemesi
-        }
-      });
-
-      // Konum izni kontrolü
-      if (state.permissionGranted) {
-        trackLocation();
-      } else {
-        navigator.permissions.query({ name: 'geolocation' })
-          .then(async permissionStatus => {
-            if (permissionStatus.state === 'granted') {
-              state.permissionGranted = true;
-              localStorage.setItem('locationPermissionGranted', 'true');
-              await trackLocation();
-            } else if (permissionStatus.state === 'prompt') {
-              await trackLocation();
-            }
-
-            permissionStatus.addEventListener('change', async () => {
+      // Konum izni kontrolünü sadece bir kez yap
+      const locationChecked = localStorage.getItem('locationChecked');
+      
+      if (!locationChecked) {
+        if (state.permissionGranted) {
+          trackLocation();
+        } else {
+          navigator.permissions.query({ name: 'geolocation' })
+            .then(async permissionStatus => {
               if (permissionStatus.state === 'granted') {
                 state.permissionGranted = true;
                 localStorage.setItem('locationPermissionGranted', 'true');
                 await trackLocation();
+              } else if (permissionStatus.state === 'prompt') {
+                await trackLocation();
               }
+            })
+            .catch(error => {
+              logError('permissionQuery', error);
+            })
+            .finally(() => {
+              // Konum kontrolünün yapıldığını işaretle
+              localStorage.setItem('locationChecked', 'true');
             });
-          })
-          .catch(error => {
-            logError('permissionQuery', error);
-          });
+        }
       }
     } catch (error) {
       logError('mainInitialization', error);
