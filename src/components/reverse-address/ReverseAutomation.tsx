@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Pause, Settings } from 'lucide-react';
+import { Play, Pause } from 'lucide-react';
 
 interface AutomationConfig {
   region: string;

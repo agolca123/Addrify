@@ -50,7 +50,7 @@ export interface ReverseAddressResult {
     emails: string;
     historical_addresses: string;
     associated_people: string;
-  };
+  }[];
   error: string;
   warnings: string;
 }

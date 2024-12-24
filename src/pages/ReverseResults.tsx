@@ -8,6 +8,18 @@ import { Search, Calendar, MapPin, User } from 'lucide-react';
 
 interface EnrichedReverseResult extends ReverseAddressResult {
   location?: LocationData;
+  created_at: string;
+  id: string;
+  current_residents: {
+    name: string;
+    age_range: string;
+    gender: string;
+    link_to_address_start_date: string;
+    phones: string;
+    emails: string;
+    historical_addresses: string;
+    associated_people: string;
+  }[];
 }
 
 export const ReverseResults: React.FC = () => {
@@ -26,7 +38,6 @@ export const ReverseResults: React.FC = () => {
     try {
       if (!user) return;
 
-      // Fetch reverse address results with related location data
       const { data, error } = await supabase
         .from('reverse_address_results')
         .select(`
@@ -37,7 +48,15 @@ export const ReverseResults: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setResults(data || []);
+
+      const formattedData = data?.map(result => ({
+        ...result,
+        current_residents: Array.isArray(result.current_residents) 
+          ? result.current_residents 
+          : [result.current_residents]
+      }));
+
+      setResults(formattedData || []);
     } catch (error) {
       console.error('Error fetching results:', error);
     } finally {
@@ -120,24 +139,85 @@ export const ReverseResults: React.FC = () => {
             className="bg-white p-6 rounded-lg shadow-md"
           >
             <div className="flex justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-green-600" />
-                  <h3 className="font-medium">{result.street_line_1}</h3>
-                </div>
-                <p className="text-sm text-gray-500">
-                  {result.city}, {result.state_code} {result.postal_code}
-                </p>
-                {result.current_residents.name && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <User className="h-4 w-4" />
-                    <span>{result.current_residents.name}</span>
+              <div className="grid grid-cols-3 gap-6 flex-grow">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-green-600" />
+                    <div>
+                      <h3 className="font-medium">{result.street_line_1}</h3>
+                      <p className="text-sm text-gray-500">
+                        {result.city}, {result.state_code} {result.postal_code}
+                        {result.zip4 && `-${result.zip4}`}
+                      </p>
+                    </div>
                   </div>
-                )}
+                  
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      {new Date(result.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-l pl-6">
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">Status</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      result.is_valid === 'true'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {result.is_valid === 'true' ? 'Valid' : 'Invalid'}
+                    </span>
+
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      result.is_commercial === 'true'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {result.is_commercial === 'true' ? 'Commercial' : 'Not Commercial'}
+                    </span>
+
+                    <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800">
+                      {result.delivery_point || 'N/A'}
+                    </span>
+
+                    <span className="px-2 py-1 text-xs rounded-full bg-teal-100 text-teal-800">
+                      {result.lat_long?.includes('RoofTop') ? 'Rooftop Accuracy' : 'Standard'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-l pl-6">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                    <User className="h-4 w-4" />
+                    <span className="font-medium">Current Residents ({result.current_residents.length})</span>
+                  </div>
+                  <div className="space-y-1">
+                    {result.current_residents.slice(0, 2).map((resident, idx) => (
+                      <p key={idx} className="text-sm text-gray-600">
+                        {resident.name} {resident.age_range && `• ${resident.age_range}`}
+                      </p>
+                    ))}
+                    {result.current_residents.length > 2 && (
+                      <p className="text-sm text-gray-500">
+                        +{result.current_residents.length - 2} more residents
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
+
               <button
                 onClick={() => setSelectedResult(result)}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-500"
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-500 h-fit ml-4"
               >
                 View Details
               </button>
@@ -147,7 +227,8 @@ export const ReverseResults: React.FC = () => {
       </div>
 
       {selectedResult && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+        style={{ marginTop: "0px" }}>      
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <ReverseResultsComponent
               result={selectedResult}

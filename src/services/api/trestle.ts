@@ -37,6 +37,30 @@ export const getReverseAddressInfo = async (location: LocationData): Promise<Rev
 };
 
 const transformResponse = (data: any, location: LocationData): ReverseAddressResult => {
+  // Tüm residents verilerini işle
+  const residents = data.current_residents || [];
+  
+  const transformedResidents = residents.map((resident: any) => ({
+    name: resident.name || '',
+    age_range: resident.age_range || '',
+    gender: resident.gender || '',
+    link_to_address_start_date: resident.link_to_address_start_date || '',
+    phones: Array.isArray(resident.phones) 
+      ? resident.phones.map((p: any) => p.phone_number).join(', ') 
+      : '',
+    emails: Array.isArray(resident.emails) 
+      ? resident.emails.join(', ') 
+      : '',
+    historical_addresses: Array.isArray(resident.historical_addresses) 
+      ? resident.historical_addresses.map((addr: any) => 
+          `${addr.street_line_1}, ${addr.city}, ${addr.state_code} ${addr.postal_code}`
+        ).join('; ') 
+      : '',
+    associated_people: Array.isArray(resident.associated_people) 
+      ? resident.associated_people.map((person: any) => person.name).join(', ') 
+      : ''
+  }));
+
   return {
     location_id: location.id,
     user_id: location.user_id,
@@ -46,20 +70,11 @@ const transformResponse = (data: any, location: LocationData): ReverseAddressRes
     postal_code: data.postal_code || location.postal_code || '',
     zip4: data.zip4 || '',
     state_code: data.state_code || location.state || '',
-    lat_long: `${location.latitude},${location.longitude}`,
-    is_active: data.is_active?.toString() || 'false',
-    is_commercial: data.is_commercial?.toString() || 'false',
+    lat_long: data.lat_long ? `${data.lat_long.latitude},${data.lat_long.longitude}` : `${location.latitude},${location.longitude}`,
+    is_active: data.is_active === null ? 'null' : data.is_active?.toString(),
+    is_commercial: data.is_commercial === null ? 'null' : data.is_commercial?.toString(),
     delivery_point: data.delivery_point || '',
-    current_residents: {
-      name: data.current_residents?.name || '',
-      age_range: data.current_residents?.age_range || '',
-      gender: data.current_residents?.gender || '',
-      link_to_address_start_date: data.current_residents?.link_to_address_start_date || '',
-      phones: Array.isArray(data.current_residents?.phones) ? data.current_residents.phones.join(', ') : '',
-      emails: Array.isArray(data.current_residents?.emails) ? data.current_residents.emails.join(', ') : '',
-      historical_addresses: Array.isArray(data.current_residents?.historical_addresses) ? data.current_residents.historical_addresses.join(', ') : '',
-      associated_people: Array.isArray(data.current_residents?.associated_people) ? data.current_residents.associated_people.join(', ') : ''
-    },
+    current_residents: transformedResidents,
     error: data.error || '',
     warnings: Array.isArray(data.warnings) ? data.warnings.join(', ') : ''
   };

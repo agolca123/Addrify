@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../config/supabase';
@@ -7,7 +7,7 @@ import { getReverseAddressInfo } from '../services/api/trestle';
 import { AddressFilters } from '../components/reverse-address/AddressFilters';
 import { AddressList } from '../components/reverse-address/AddressList';
 import { ReverseAddressResults } from '../components/reverse-address/ReverseAddressResults';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, MapPin, User, Info, Home, Users, CheckCircle } from 'lucide-react';
 
 export const ReverseAddress: React.FC = () => {
   const { user } = useAuthStore();
@@ -27,7 +27,9 @@ export const ReverseAddress: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const locationsPerPage = 5;
   const [totalCount, setTotalCount] = useState(0);
-  const [listLoading, setListLoading] = useState(false);
+
+  const leftColumnRef = useRef<HTMLDivElement>(null);
+  const [leftColumnHeight, setLeftColumnHeight] = useState<number>(0);
 
   useEffect(() => {
     fetchAddresses();
@@ -187,6 +189,20 @@ export const ReverseAddress: React.FC = () => {
     fetchAddresses();
   }, [currentPage]);
 
+  // Sol sütun yüksekliğini izle
+  useEffect(() => {
+    const updateHeight = () => {
+      if (leftColumnRef.current) {
+        setLeftColumnHeight(leftColumnRef.current.offsetHeight);
+      }
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    
+    return () => window.removeEventListener('resize', updateHeight);
+  }, [addresses, currentPage]); // addresses veya sayfa değiştiğinde yeniden hesapla
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -245,7 +261,7 @@ export const ReverseAddress: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
+        <div ref={leftColumnRef} className="space-y-6">
           <AddressList
             addresses={filteredAddresses}
             onGetInfo={handleGetInfo}
@@ -339,12 +355,194 @@ export const ReverseAddress: React.FC = () => {
           </div>
         </div>
         
-        <div className="space-y-6">
+        <div style={{ minHeight: leftColumnHeight ? `${leftColumnHeight}px` : 'auto' }}>
+          {!selectedResult && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-white rounded-lg shadow-lg p-8 flex flex-col items-center justify-between h-full"
+            >
+              <div className="space-y-6 text-center">
+                <div className="flex justify-center">
+                  <motion.div
+                    animate={{
+                      y: [0, -8, 0],
+                      scale: [1, 1.02, 1],
+                    }}
+                    transition={{
+                      duration: 2.5,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="relative"
+                  >
+                    <div className="relative inline-flex items-center justify-center">
+                      <MapPin className="h-14 w-14 text-green-500 relative z-10" />
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.1, 1],
+                          opacity: [0.2, 0.4, 0.2],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className="absolute inset-0 rounded-full bg-green-100"
+                        style={{ 
+                          width: '45px', 
+                          height: '45px',
+                          margin: 'auto'
+                        }}
+                      />
+                    </div>
+                  </motion.div>
+                </div>
+
+                <div className="space-y-3">
+                  <motion.h3 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-2xl font-semibold text-gray-800"
+                  >
+                    Address Information
+                  </motion.h3>
+                  <motion.p 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-gray-500 max-w-md mx-auto"
+                  >
+                    Discover detailed information about locations and their residents
+                  </motion.p>
+                </div>
+              </div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid grid-cols-2 gap-4 w-full max-w-2xl my-8"
+              >
+                {[
+                  {
+                    icon: Search,
+                    title: "Address Lookup",
+                    description: "Search and verify addresses",
+                    bgColor: "bg-blue-50",
+                    textColor: "text-blue-600",
+                    borderColor: "border-blue-200",
+                    iconColor: "text-blue-500"
+                  },
+                  {
+                    icon: User,
+                    title: "Resident Data",
+                    description: "View current residents",
+                    bgColor: "bg-purple-50",
+                    textColor: "text-purple-600",
+                    borderColor: "border-purple-200",
+                    iconColor: "text-purple-500"
+                  },
+                  {
+                    icon: MapPin,
+                    title: "Location Info",
+                    description: "Get geographic details",
+                    bgColor: "bg-green-50",
+                    textColor: "text-green-600",
+                    borderColor: "border-green-200",
+                    iconColor: "text-green-500"
+                  },
+                  {
+                    icon: Info,
+                    title: "Property Details",
+                    description: "Access property information",
+                    bgColor: "bg-orange-50",
+                    textColor: "text-orange-600",
+                    borderColor: "border-orange-200",
+                    iconColor: "text-orange-500"
+                  }
+                ].map((item, index) => (
+                  <motion.div
+                    key={index}
+                    whileHover={{ 
+                      scale: 1.02,
+                      y: -5,
+                      transition: { duration: 0.2 }
+                    }}
+                    className={`${item.bgColor} border ${item.borderColor} p-6 rounded-xl shadow-sm cursor-pointer`}
+                  >
+                    <item.icon className={`h-8 w-8 ${item.iconColor} mb-3`} />
+                    <h4 className={`${item.textColor} font-medium mb-1`}>{item.title}</h4>
+                    <p className={`${item.textColor} text-sm opacity-80`}>{item.description}</p>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="w-full max-w-2xl"
+              >
+                <div className="border-t pt-6">
+                  <div className="grid grid-cols-3 gap-6">
+                    {[
+                      { label: "Addresses", value: "10M+", icon: Home },
+                      { label: "Residents", value: "25M+", icon: Users },
+                      { label: "Accuracy", value: "99.9%", icon: CheckCircle }
+                    ].map((stat, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: index * 0.1 + 0.5 }}
+                        className="text-center"
+                      >
+                        <stat.icon className="h-6 w-6 text-gray-400 mx-auto mb-2" />
+                        <div className="text-2xl font-bold text-gray-700">{stat.value}</div>
+                        <div className="text-sm text-gray-500">{stat.label}</div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="text-center mt-6"
+                >
+                  <p className="text-sm text-gray-400">
+                    Click "View Info" or "Get Info" on any address to start exploring
+                  </p>
+                  <motion.div
+                    animate={{
+                      x: [0, 10, 0]
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="inline-block mt-2"
+                  >
+                    <ChevronRight className="h-5 w-5 text-green-500" />
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          )}
+
           {selectedResult && (
-            <ReverseAddressResults
-              result={selectedResult}
-              onClose={() => setSelectedResult(null)}
-            />
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              style={{ minHeight: leftColumnHeight ? `${leftColumnHeight}px` : 'auto' }}
+            >
+              <ReverseAddressResults
+                result={selectedResult}
+                onClose={() => setSelectedResult(null)}
+              />
+            </motion.div>
           )}
         </div>
       </div>

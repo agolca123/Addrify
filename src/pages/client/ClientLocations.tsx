@@ -147,7 +147,7 @@ export const ClientLocations: React.FC = () => {
       setSortField(field);
       setSortOrder('desc');
     }
-    setCurrentPage(1); // Sıralama değiştiğinde ilk sayfaya dön.
+    setCurrentPage(1); // Sıralama değiştiğinde ilk sayfaya dön
   };
 
   const formatTime = (seconds: number) => {
