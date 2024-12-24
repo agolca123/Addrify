@@ -36,7 +36,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
 
         const location = { lat: latitude, lng: longitude };
         
-        // Initialize map
+        // Initialize map.
         const map = new google.maps.Map(mapRef.current, {
           center: location,
           zoom: 15,

@@ -39,7 +39,7 @@ export const getAddressFromCoordinates = async (
     let city = '';
     let country = '';
 
-    // Parse address components
+    // Parse address components.
     result.address_components.forEach((component: any) => {
       if (component.types.includes('street_number')) {
         streetAddress = component.long_name + ' ' + streetAddress;

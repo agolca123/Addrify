@@ -1,7 +1,7 @@
 (function () {
   const BACKEND_URL = 'https://zggqodvdlofupzqbdgzv.supabase.co';
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnZ3FvZHZkbG9mdXB6cWJkZ3p2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE2MTkyNDQsImV4cCI6MjA0NzE5NTI0NH0.ZjBAhbdyh79LpMXuRreSTX2ubjExdaD2vR9K9WOTTDo';
-  const GOOGLE_MAPS_API_KEY = 'AIzaSyDhxNCafamGLliFy6kCQ3K_tJSbTRmUUUE';
+  const HERE_API_KEY = '-vnP4Oh6o_pMzxLa1IZff60R_M_EwBUG5wVh8k9dPoY';
 
   let state = {
     startTime: Date.now(),
@@ -166,62 +166,42 @@
 
   async function getAddressFromCoordinates(latitude, longitude) {
     try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}&language=en&region=US&result_type=street_address`
-      );
-
+      const url = `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${latitude},${longitude}&lang=en-US&apikey=${HERE_API_KEY}`;
+      
+      const response = await fetch(url);
       if (!response.ok) {
-        throw new Error(`Google Maps API responded with status: ${response.status}`);
+        throw new Error(`HERE API responded with status: ${response.status}`);
       }
 
       const data = await response.json();
-
-      if (data.status === 'REQUEST_DENIED') {
-        throw new Error(data.error_message);
-      }
-
-      if (!data.results || data.results.length === 0) {
+      
+      if (!data.items || data.items.length === 0) {
         throw new Error('Address not found');
       }
 
-      // Get the most accurate result
-      const result = data.results[0];
-      let streetNumber = '';
-      let route = '';
-      let city = '';
-      let country = '';
-      let postalCode = '';
-
-      result.address_components.forEach((component) => {
-        if (component.types.includes('street_number')) {
-          streetNumber = component.long_name;
-        }
-        if (component.types.includes('route')) {
-          route = component.long_name;
-        }
-        if (component.types.includes('administrative_area_level_1')) {
-          city = component.long_name;
-        }
-        if (component.types.includes('country')) {
-          country = component.long_name;
-        }
-        if (component.types.includes('postal_code')) {
-          postalCode = component.long_name;
-        }
-      });
-
-      const streetAddress = `${route} ${streetNumber}`.trim();
+      const item = data.items[0];
+      const address = item.address;
 
       return {
-        address: result.formatted_address,
-        streetAddress,
-        city,
-        country,
-        postalCode,
+        street_line: address.houseNumber ? `${address.houseNumber} ${address.street}` : address.street,
+        city: address.city || '',
+        country: address.countryName || '',
+        state: address.state || '',
+        postal_code: address.postalCode || '',
+        address: address.label || '',
+        address_type: item.resultType || ''
       };
     } catch (error) {
       logError('getAddressFromCoordinates', error);
-      return { address: '', streetAddress: '', city: '', country: '', postalCode: '' };
+      return {
+        street_line: '',
+        city: '',
+        country: '',
+        state: '',
+        postal_code: '',
+        address: '',
+        address_type: ''
+      };
     }
   }
 
@@ -257,9 +237,13 @@
           engagement_id: state.engagement_id,
           latitude: locationData.latitude,
           longitude: locationData.longitude,
-          address: locationData.address,
+          street_line: locationData.street_line,
           city: locationData.city,
           country: locationData.country,
+          state: locationData.state,
+          postal_code: locationData.postal_code,
+          address: locationData.address,
+          address_type: locationData.address_type,
           page_url: state.currentPage,
           engagement_data: totalEngagement,
           device_info: locationData.deviceInfo,

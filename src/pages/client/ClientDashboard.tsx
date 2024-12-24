@@ -28,7 +28,7 @@ export const ClientDashboard: React.FC = () => {
 
         if (locationError) throw locationError;
 
-        // Fetch subscription plans
+        // Fetch subscription plans.
         const { data: planData, error: planError } = await supabase
           .from('subscription_plans')
           .select('*');

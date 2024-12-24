@@ -39,7 +39,7 @@ export const ClientAnalytics: React.FC = () => {
         const { data, error } = await supabase
           .rpc('get_engagement_summary', { 
             p_user_id: user.id,
-            p_days: 30 // Son 30 günlük veriyi getir
+            p_days: 30 // Son 30 günlük veriyi getir.
           });
 
         if (error) throw error;

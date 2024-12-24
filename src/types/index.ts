@@ -1,76 +1,56 @@
-export interface ReverseAddressResult {
-  id: string;
-  locationId: string;
-  address: string;
-  streetAddress: string;
-  city: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-  userData: {
-    name?: string;
-    phone?: string;
-    email?: string;
-    age?: number;
-    gender?: string;
-    interests?: string[];
-    occupation?: string;
-    income_level?: string;
-    education?: string;
-    marital_status?: string;
-    household_size?: number;
-  };
-  timestamp: string;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  role: 'admin' | 'user';
-  parentId?: string;
-  pixelCode: string;
-  subscriptionStatus: string;
-  subscriptionEndDate?: string;
-  addressCount: number;
-  twoFactorEnabled: boolean;
-  isDemo: boolean;
-  notificationPreferences: {
-    email: boolean;
-    browser: boolean;
-    updates: boolean;
-    security: boolean;
-  };
-  createdAt: string;
-}
-
+// Add address_type to LocationData interface
 export interface LocationData {
   id: string;
-  userId: string;
+  user_id: string;
   latitude: number;
   longitude: number;
   address: string;
+  street_line?: string;
   city: string;
+  state?: string;
+  postal_code?: string;
   country: string;
-  deviceInfo?: any;
+  address_type?: string;
   timestamp: string;
+  device_info?: any;
+  engagement_data?: {
+    total: number;
+    details: {
+      timeSpent: number;
+      timeScore: number;
+      pageViews: number;
+      pageViewScore: number;
+      clicks: number;
+      clickScore: number;
+    };
+  };
 }
 
-export interface SubscriptionPlan {
-  id: string;
-  name: string;
-  price: number;
-  addressLimit: number;
-  features: string[];
-  isPopular: boolean;
-  stripePriceId?: string;
-}
+// Rest of the types remain the same...
 
-export interface PaymentHistory {
-  id: string;
-  userId: string;
-  amount: number;
-  status: 'success' | 'pending' | 'failed';
-  planId?: string;
-  stripePaymentId?: string;
-  createdAt: string;
+export interface ReverseAddressResult {
+  location_id: string;
+  user_id: string;
+  is_valid: string;
+  street_line_1: string;
+  city: string;
+  postal_code: string;
+  zip4: string;
+  state_code: string;
+  lat_long: string;
+  is_active: string;
+  is_commercial: string;
+  delivery_point: string;
+  current_residents: {
+    name: string;
+    age_range: string;
+    gender: string;
+    link_to_address_start_date: string;
+    phones: string;
+    emails: string;
+    historical_addresses: string;
+    associated_people: string;
+  };
+  error: string;
+  warnings: string;
 }

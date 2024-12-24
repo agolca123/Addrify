@@ -13,6 +13,8 @@ import { ClientDashboard } from './pages/client/ClientDashboard';
 import { ClientLocations } from './pages/client/ClientLocations';
 import { ClientAnalytics } from './pages/client/ClientAnalytics';
 import { ReverseAddress } from './pages/ReverseAddress';
+import { ReverseAutomation } from './pages/ReverseAutomation';
+import { ReverseResults } from './pages/ReverseResults';
 import { Subscription } from './pages/Subscription';
 import { LandingPage } from './pages/LandingPage';
 import { useAuthStore } from './store/authStore';
@@ -71,9 +73,21 @@ function App() {
                 <ClientAnalytics />
               </PrivateRoute>
             } />
+
+            {/* Reverse Address routes */}
             <Route path="/reverse-address" element={
               <PrivateRoute>
                 <ReverseAddress />
+              </PrivateRoute>
+            } />
+            <Route path="/reverse-automation" element={
+              <PrivateRoute>
+                <ReverseAutomation />
+              </PrivateRoute>
+            } />
+            <Route path="/reverse-results" element={
+              <PrivateRoute>
+                <ReverseResults />
               </PrivateRoute>
             } />
 
