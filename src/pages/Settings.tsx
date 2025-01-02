@@ -6,6 +6,7 @@ import { Mail, Shield, Copy, Check } from 'lucide-react';
 import { PasswordChange } from '../components/settings/PasswordChange';
 import { TwoFactorAuth } from '../components/settings/TwoFactorAuth';
 import { NotificationSettings } from '../components/settings/NotificationSettings';
+import { SMSSettings } from '../components/settings/SMSSettings';
 
 export const Settings: React.FC = () => {
   const { user } = useAuthStore();
@@ -208,6 +209,19 @@ export const Settings: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-white p-6 rounded-lg shadow-md"
+      >
+        <SMSSettings
+          onSuccess={() => handleSuccess('SMS settings updated successfully')}
+          onError={handleError}
+        />
+      </motion.div>
+
+      {/* Account Status */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="bg-white p-6 rounded-lg shadow-md"
       >
@@ -248,3 +262,4 @@ export const Settings: React.FC = () => {
     </div>
   );
 };
+

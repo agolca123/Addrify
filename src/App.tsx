@@ -1,5 +1,4 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -18,20 +17,40 @@ import { ReverseResults } from './pages/ReverseResults';
 import { Subscription } from './pages/Subscription';
 import { LandingPage } from './pages/LandingPage';
 import { useAuthStore } from './store/authStore';
+import { SMSMessages } from './pages/sms/SMSMessages';
+import { SMSTemplates } from './pages/sms/SMSTemplates';
+import { SMSWorkflows } from './pages/sms/SMSWorkflows';
+import { SMSStatusWorker } from './workers/smsStatusWorker';
+import { useEffect } from 'react';
 
 function App() {
   const { user } = useAuthStore();
 
+  useEffect(() => {
+    // SMS Status Worker'ı başlat
+    const worker = SMSStatusWorker.getInstance();
+    
+    return () => {
+      worker.stopWorker(); // Component unmount olduğunda worker'ı durdur
+    };
+  }, []);
+
   return (
-    <Router>
+    <BrowserRouter>
       <div className="min-h-screen bg-gray-50">
         {user && <Navigation />}
         <div className={user ? 'container mx-auto px-4 py-8' : ''}>
           <Routes>
             {/* Public routes */}
             <Route path="/" element={!user ? <LandingPage /> : 
-              user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/client" />} 
-            />
+              user.role === 'admin' ? 
+                <PrivateRoute allowedRole="admin">
+                  <AdminDashboard />
+                </PrivateRoute> : 
+                <PrivateRoute allowedRole="user">
+                  <ClientDashboard />
+                </PrivateRoute>
+            } />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
@@ -102,10 +121,15 @@ function App() {
                 <Subscription />
               </PrivateRoute>
             } />
+
+            {/* SMS route'ları */}
+            <Route path="/sms/messages" element={<SMSMessages />} />
+            <Route path="/sms/templates" element={<SMSTemplates />} />
+            <Route path="/sms/workflows" element={<SMSWorkflows />} />
           </Routes>
         </div>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
 

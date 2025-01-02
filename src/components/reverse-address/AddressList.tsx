@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MapPin, TrendingUp, Calendar, Eye, Search } from 'lucide-react';
 import { LocationData } from '../../types';
 
@@ -15,6 +15,14 @@ export const AddressList: React.FC<AddressListProps> = ({
   onViewInfo,
   processedAddresses
 }) => {
+  const [loadingAddress, setLoadingAddress] = useState<string | null>(null);
+
+  const handleGetInfo = async (address: LocationData) => {
+    setLoadingAddress(address.id);
+    await onGetInfo(address);
+    setLoadingAddress(null);
+  };
+
   return (
     <div className="space-y-4">
       {addresses.map((address) => (
@@ -59,11 +67,21 @@ export const AddressList: React.FC<AddressListProps> = ({
                 </button>
               ) : (
                 <button
-                  onClick={() => onGetInfo(address)}
+                  onClick={() => handleGetInfo(address)}
+                  disabled={loadingAddress === address.id}
                   className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200 ease-in-out shadow-sm whitespace-nowrap w-[110px] justify-center"
                 >
-                  <Search className="h-4 w-4 mr-2" />
-                  Get Info
+                  {loadingAddress === address.id ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                      Get Info
+                    </div>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Get Info
+                    </>
+                  )}
                 </button>
               )}
             </div>

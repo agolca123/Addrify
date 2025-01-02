@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { MessageSquare, GitBranch } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import {
   MapPin,
@@ -116,6 +117,28 @@ export const Navigation: React.FC = () => {
       to: '/client/analytics',
       icon: <BarChart className="h-5 w-5" />,
       text: 'Analytics'
+    },
+    {
+      type: 'dropdown',
+      icon: <MessageSquare className="h-5 w-5" />,
+      text: 'SMS',
+      items: [
+        {
+          to: '/sms/messages',
+          icon: <MessageSquare className="h-5 w-5" />,
+          text: 'Messages'
+        },
+        {
+          to: '/sms/templates',
+          icon: <MessageSquare className="h-5 w-5" />,
+          text: 'Templates'
+        },
+        {
+          to: '/sms/workflows',
+          icon: <GitBranch className="h-5 w-5" />,
+          text: 'Workflows'
+        }
+      ]
     },
     {
       type: 'dropdown',
